@@ -9,6 +9,7 @@ import Balance from './components/Balance';
 import IncomeExpense from './components/IncomeExpense';
 import TransactionTable from './components/TransactionTable';
 import About from './components/About';
+import Firebase from './firebase/firebase';
 
 import './App.css';
 
@@ -58,10 +59,32 @@ export default class App extends Component {
       });
   }
 
+  loadFirebase = () => {
+    Firebase.firestore()
+    .collection('expense')
+    .doc('exList')
+    .get()
+    .then(item => {
+      if(item.data())this.setState({transactions : item.data().list});
+    });
+  }
+
+  addFirebase = () => {
+    Firebase.firestore()
+    .collection('expense')
+    .doc('exList')
+    .set({list : this.state.transactions});
+  }
+
+  clearFirebase = () => {
+    Firebase.firestore()
+    .collection('expense')
+    .doc('exList')
+    .delete();
+  }
+
   componentDidMount() {
-    // this.loadData();   // load data from variable
-    this.loadJsonData();  // load data from JSON file on server
-    // this.loadFirebase(); // load data from Firebase
+    this.loadFirebase();
   }
 
   validateForm = (name,amount) => {
@@ -73,6 +96,9 @@ export default class App extends Component {
       return false;
     } else if (+amount === 0) {
       window.alert('Amount CANNOT be zero!');
+      return false;
+    } else if((Number)(amount) % 1 !== 0){
+      window.alert('Amount CANNOT be decimal!');
       return false;
     }
   
@@ -94,12 +120,14 @@ export default class App extends Component {
 
     this.state.transactions.unshift(newTransaction);
     this.setState( { transactions: this.state.transactions } );
+    this.addFirebase();
   }
 
   clearTransactions = () => {
     let ans = window.confirm("You are going to clear all transaction history!!!")
     if (ans) {
       this.setState( { transactions: [] } );
+      this.clearFirebase();
     }
   }
 
